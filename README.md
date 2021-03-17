@@ -1,8 +1,8 @@
 # build2 reference
 
+A half-assed attempt to make a concise build2 reference.
 
 buildfile contains directives, target declarations and variable assignmens
-
 
 ## Targets
 
@@ -11,7 +11,7 @@ buildfile contains directives, target declarations and variable assignmens
 - `libu[e|l]` utility library for executable or library (wtf is this???)
 - `obj[e|a|s]` object, also executable, archive or shared specific
 
-After the introducer, the name follows eg. `exe{tool}` or `obje{util}`. Properties on target can be changed like so:
+After the target introducer, its name follows eg. `exe{tool}` or `obje{util}`. Dependencies follow the target: `exe{tool}: {hxx cxx}{tool}`. Properties on target can be changed like so:
 
 ```
 exe{tool}:
@@ -20,17 +20,18 @@ exe{tool}:
 }
 ```
 
-The specific targets with suffices are used to set options, for example:
+When the specific suffix is used, it allows to change options only when building the target for a parent of that type. Eg we may want compile a .cpp with different options when building an archive vs a shared library. For example:
 ```
-obja{string}:
+libs{tool}: cxx{string}
+
+objs{string}:
 {
-	config.cxx.poptions += -DLIB_ARCHIVE
+	cxx.poptions += -DLIB_DYNAMIC_EXPORT
 }
 ```
 
-Dependencies follow the target: exe{tool}: {hxx cxx}{tool}
 
-Also, scope can be introduced which is equivalent as if reading a buildfile from a folder with a name that matches the scope's name.
+Also, scope can be introduced which is equivalent as if reading a buildfile from a folder with a name that matches the scope's name. Here in upper level buildfile we use files that reside in ./tool subdirectory (?).
 
 ```
 tool/
@@ -41,7 +42,7 @@ tool/
 
 ## Directives
 
-These seem to resemble functions in a programming language.
+These resemble functions in a programming language.
 
 ### import, import?, import!
 Import target from another project. Syntax is `import <name> = [<project>%]<target>`. Project is optional.
@@ -121,7 +122,7 @@ if ($c.target.system == 'windows')
 ```
 
 ```
-if false
+if! true
 {
 	info 'will not print'
 }
@@ -173,17 +174,55 @@ config [bool] config.libworld.greet ?= true
 ```
 
 
+## Special variables
+
+| variable | description |
+| :---: | ---- |
+| `src_root` | path to the root of the *project* |
+| `src_base` | path to the current *target/scope* |
+| `dst_root` | path to the output root for the *project* |
+| `dst_base` | path to the current output for the *target/scope* |
+| `version` | version, also available .major, .minor and .patch |
+
+cxx module
+
+| variable	| desc |
+| :------:	| ---- |
+| `cxx.std` 	| C++ std version (default to latest) |
+| `cxx.id`		| toolset |
+| `cxx.target.class`	| triplet describing compilation target |
+| `cxx.target.cpu`	| target cpu |
+| `cxx.target.system`	| target cpu |
+| `cxx.target.system`	| target cpu |
+| `cxx.export.*` | target 'usage' properties. |
+
+```
+[project_name] project
+```
+
+There are more:
+```
+[string] project.summary, [string] project.url,
+
+[target_triplet] cxx.target = x86_64-w64-mingw32
+[string] cxx.target.class = windows
+[string] cxx.target.cpu = x86_64
+[string] cxx.target.system = mingw32
+hxx{*}: [string] extension = hxx
+cxx{*}: [string] extension = cxx
+```
 
 ## Configuration
 
+```
 @config.import@
 
-	config.import.<proj>[.<name>[.<type>]
-	config.<proj>
-	import.<name>.<type>
-	import.<name>
+config.import.<proj>[.<name>[.<type>]
+config.<proj>
+import.<name>.<type>
+import.<name>
+```
 
-		path to project, possibly target name and type
-
+	path to project, possibly target name and type
 
 
