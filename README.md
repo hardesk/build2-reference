@@ -102,6 +102,24 @@ Export target something something..
 export $out_root/libhello/$import.target
 ```
 
+**build/export.build** files describes how to export a target out of a project. A few variables are defined while parsing it:
+
+| variable | description |
+| --- | --- |
+| `src_root` | source root of the project being imported (this project) |
+| `out_root` | output root of the project being imported (this project) |
+| `import.target` | name of the target being imported. eg lib{tool} |
+
+The file should load the buildfile for the target being exported and actually export it using `export` directive. eg.
+
+See variables that are relevant to target [exportation](#export-variables)
+
+
+```
+$out_root { include buildfile }
+export $out_root/libtool/$import.target
+```
+
 ### using, using?
 Use a build2 module, eg.
 ```
@@ -132,15 +150,15 @@ if! true
 ### switch <arg, arg..> [: match-function]
 ### case, default
 Pattern matching switch statement. Multiple values can be matched against a pattern consisting of multiple values as well. Also pattern can combine the values in different ways:
-',', eg. case 'a', 'b' will match two arguments 'a' and 'b'.
-'|', eg. case 'a' | 'b' will match either 'a' or 'b'
+- ',', eg. case 'a', 'b' will match two arguments 'a' and 'b'.
+- '|', eg. case 'a' | 'b' will match either 'a' or 'b'
 
 match function can be
-	regex.match - regex match of the pattern against the full argument string 
-	regex.search - regex search of a substring in argument
-	path.match - use path-style matching
-	icase - add this to ignore case
-	also any function taking value, pattern and returning bool can be specified
+- `regex.match` - regex match of the pattern against the full argument string 
+- `regex.search` - regex search of a substring in argument
+- `path.match` - use path-style matching
+- `icase` - add this to ignore case
+- also any function taking `value, pattern` and returning bool can be specified
 
 ```
 switch 'x' {
@@ -180,8 +198,8 @@ config [bool] config.libworld.greet ?= true
 | :---: | ---- |
 | `src_root` | path to the root of the *project* |
 | `src_base` | path to the current *target/scope* |
-| `dst_root` | path to the output root for the *project* |
-| `dst_base` | path to the current output for the *target/scope* |
+| `out_root` | path to the output root for the *project* |
+| `out_base` | path to the current output for the *target/scope* |
 | `version` | version, also available .major, .minor and .patch |
 
 cxx module
@@ -195,6 +213,38 @@ cxx module
 | `cxx.target.system`	| target cpu |
 | `cxx.target.system`	| target cpu |
 | `cxx.export.*` | target 'usage' properties. |
+
+### Export Variables
+The prefix is either `c.`, `cxx.` or `cc.` for C, C++ or both respectively.
+
+| var | desc |
+| :---: | --- |
+| `export.poptions` | preprocessor opts |
+| `export.coptions` | compiler options |
+| `export.loptions` | linker options |
+| `export.libs` | libraries depend on |
+| `export.imp_libs` | libraries to import |
+
+### Bin Module Variables
+
+| var | desc |
+| :---: | --- |
+| config.bin.target |  |
+| config.bin.pattern
+| [config.]bin.lib | library types to build |
+| [config.]bin.{exe|liba|libs}.lib | library type to use |
+| [config.]bin.rpath | |
+| [config.]bin.rpath.auto | |
+| [config.]bin.rpath_link | |
+| [config.]bin.rpath_link.auto | |
+| config.bin.{prefix|suffix} | |
+| [config.]bin.{lib|exe}.{prefix|suffix} | prefix, suffix for library or executable |
+| bin.whole | link dependencies into library |
+| bin.binless | library is binless (header only) |
+| bin.lib.load_suffix | |
+| bin.lib.load_suffix_pattern | |
+| bin.lib.version | |
+| bin.lib.version_pattern | |
 
 ```
 [project_name] project
