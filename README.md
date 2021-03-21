@@ -7,9 +7,9 @@ buildfile contains directives, target declarations and variable assignmens
 ## Targets
 
 - `exe` executable
-- `lib[a|s]` library, also can be specifically set as archive or shared
-- `libu[e|l]` utility library for executable or library (wtf is this???)
-- `obj[e|a|s]` object, also executable, archive or shared specific
+- `lib[a,s]` library, also can be specifically set as archive or shared
+- `libu[e,l]` utility library for executable or library (wtf is this???)
+- `obj[e,a,s]` object, also executable, archive or shared specific
 
 After the target introducer, its name follows eg. `exe{tool}` or `obje{util}`. Dependencies follow the target: `exe{tool}: {hxx cxx}{tool}`. Properties on target can be changed like so:
 
@@ -229,22 +229,22 @@ The prefix is either `c.`, `cxx.` or `cc.` for C, C++ or both respectively.
 
 | var | desc |
 | :---: | --- |
-| config.bin.target |  |
-| config.bin.pattern
-| [config.]bin.lib | library types to build |
-| [config.]bin.{exe|liba|libs}.lib | library type to use |
-| [config.]bin.rpath | |
-| [config.]bin.rpath.auto | |
-| [config.]bin.rpath_link | |
-| [config.]bin.rpath_link.auto | |
-| config.bin.{prefix|suffix} | |
-| [config.]bin.{lib|exe}.{prefix|suffix} | prefix, suffix for library or executable |
-| bin.whole | link dependencies into library |
-| bin.binless | library is binless (header only) |
-| bin.lib.load_suffix | |
-| bin.lib.load_suffix_pattern | |
-| bin.lib.version | |
-| bin.lib.version_pattern | |
+| `config.bin.target` |  |
+| `config.bin.pattern`
+| `[config.]bin.lib` | library types to build |
+| `[config.]bin.{exe,liba,libs}.lib` | library type to use |
+| `[config.]bin.rpath` | |
+| `[config.]bin.rpath.auto` | |
+| `[config.]bin.rpath_link` | |
+| `[config.]bin.rpath_link.auto` | |
+| `config.bin.{prefix,suffix}` | |
+| `[config.]bin.{lib,exe}.{prefix,suffix}` | prefix, suffix for library or executable |
+| `bin.whole` | link dependencies into library |
+| `bin.binless` | library is binless (header only) |
+| `bin.lib.load_suffix` | |
+| `bin.lib.load_suffix_pattern` | |
+| `bin.lib.version` | |
+| `bin.lib.version_pattern` | |
 
 ```
 [project_name] project
