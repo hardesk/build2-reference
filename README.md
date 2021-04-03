@@ -1,8 +1,21 @@
 # build2 reference
 
-A half-assed attempt to make a concise build2 reference.
+A half-assed attempt to make a build2 reference. Information is extracted from the manual novel. Read it first (at least basics).
 
-buildfile contains directives, target declarations and variable assignmens
+buildfile contains directives, target declarations and variable assignmens. newlines matter.
+
+## Files
+
+### ./build/bootstrap.build
+A file read first. Names the project and must contain using directives to load modules.
+
+### ./build/root.build
+In addition to what bootstrap contains, holds shared properties for targets in the project. Here `src_root` is defined while `src_base` is not (because no project is loaded yet).
+
+When running buildfile from a subfolder, module import paths are based off buildfile. This means that import must be prefixed with `$src_root` if it's project relative e.g.
+```
+config.import.fmt=$src_root/libs/fmt # will make fmt%lib{fmt} available to import
+```
 
 ## Targets
 
@@ -24,19 +37,19 @@ When the specific suffix is used, it allows to change options only when building
 ```
 libs{tool}: cxx{string}
 
-objs{string}:
+objs{string}: # as opposed to obja{string}
 {
 	cxx.poptions += -DLIB_DYNAMIC_EXPORT
 }
 ```
 
 
-Also, scope can be introduced which is equivalent as if reading a buildfile from a folder with a name that matches the scope's name. Here in upper level buildfile we use files that reside in ./tool subdirectory (?).
+Also, scope can be introduced which is equivalent to reading a buildfile from a folder named as scope. Here in ./buildfile we reference ./tool/iron.hpp/cpp.
 
 ```
 tool/
 {
-	exe{hammer}: {hxx cxx}{*}
+	exe{hammer}: {hxx cxx}{iron}
 }
 ```
 
@@ -45,11 +58,11 @@ tool/
 These resemble functions in a programming language.
 
 ### import, import?, import!
-Import target from another project. Syntax is `import <name> = [<project>%]<target>`. Project is optional.
+Import target from a project. Syntax is `import <name> = [<project>%]<target>`. Target can may be in another project: `config.import.<project>=<path>` must be declared is such case. <project> is skipped if target is in "this" project. This is called project-local importation.
 Example:
 ```
-import mylib = libhello%lib{hello}
-import anotherlib = lib{world}
+import mylib = libos%lib{threading} # threading target from libos project
+import lib = lib{printer} # printer target from this project
 ```
 	
 ### assert, assert!
@@ -59,13 +72,13 @@ assert ($cxx.target.cpu == 'x86_64') 'Only 64bit x86 is supported'
 ```
 
 ### print
-Write argument to stdout
+Write argument to *stdout*
 ```
 print $(cxx.id)
 ```
 
 ### fail, warn, info, text
-Write diagnostics message to stderr. Fail also terminates the program.
+Write diagnostics message to *stderr*. Fail also terminates the program.
 ```
 info 'will get an error next'
 fail 'the end'
@@ -73,7 +86,7 @@ info 'unreached'
 ```
 
 ### dump
-Print the contents of the current scope (including nested scope) or target passed as argument to stderr.
+Print the contents of the current scope (including nested scope) or of the target passed as an argument to stderr.
 ```
 exe{hello}: {hxx cxx}{**}
 cxx.poptions =+ "-I$out_root" "-I$src_root"
@@ -82,16 +95,17 @@ dump exe{hello}
 ```
 
 ### source
+Include a buildfile as if copy-pasting the contents of the file. File can be included multiple times.
 
 ### include
-Include a buildfile. Basically pull in text from the file specified, but additionally including it creates a new scope for the file content. Eg.
+Include a buildfile guarding against multi-include. Pull in text from the file specified (or implied), but additionally create a new scope for the file content. Eg.
 ```
 include ../libhello
 ```
 this will include ../libhello/buildfile
 
 ### run
-Launch an external process with arguments as process args and parse output as a buildfile.
+Launch an external process passing arguments and parse output as a buildfile.
 ```
 run <name> [<arg>...]
 ```
@@ -102,21 +116,21 @@ Export target something something..
 export $out_root/libhello/$import.target
 ```
 
-**build/export.build** files describes how to export a target out of a project. A few variables are defined while parsing it:
+**build/export.build** file describes how to export a target out of a project. Or rather, how to import it, as the file is read and parsed by the importing pary when the target (project?) is used in *another project*. A few variables are defined while parsing it (`src_base` and `out_base` are undefined):
 
 | variable | description |
 | --- | --- |
 | `src_root` | source root of the project being imported (this project) |
 | `out_root` | output root of the project being imported (this project) |
-| `import.target` | name of the target being imported. eg lib{tool} |
+| `import.target` | name of the target being imported (file is sourced by the **importing** party), eg `lib{tool}` |
 
-The file should load the buildfile for the target being exported and actually export it using `export` directive. eg.
-
-See variables that are relevant to target [exportation](#export-variables)
-
+The file should include the buildfile for the target being exported/imported (this actually describes the target) and actually export it using `export` directive. See variables that are relevant to target [exportation](#export-variables), e.g.:
 
 ```
-$out_root { include buildfile }
+$out_root/
+{
+	include buildfile
+}
 export $out_root/libtool/$import.target
 ```
 
@@ -186,11 +200,18 @@ for n: foo bar baz
 ### config
 Declare a special config variable. The name/path has to conform to `config[.**].<project>.**`
 
-
 ```
-config [bool] config.libworld.greet ?= true
+config [string] config.libworld.greet ?= "hello"
+
+# in libworld/buildfile
+cc.poptions += "-DGREET=$config.libworld.greet"
 ```
 
+Afterwards when importing the target from the project, the variable can be set and it will be "passed" to the imported target.
+```
+config.libworld.greet = "hi"
+config.import.libworld=$src_root/libs/libworld
+```
 
 ## Special variables
 
@@ -219,11 +240,11 @@ The prefix is either `c.`, `cxx.` or `cc.` for C, C++ or both respectively.
 
 | var | desc |
 | :---: | --- |
-| `export.poptions` | preprocessor opts |
-| `export.coptions` | compiler options |
-| `export.loptions` | linker options |
-| `export.libs` | libraries depend on |
-| `export.imp_libs` | libraries to import |
+| `<P>.export.poptions` | preprocessor opts |
+| `<P>.export.coptions` | compiler options |
+| `<P>.export.loptions` | linker options |
+| `<P>.export.libs` | libraries depend on |
+| `<P>.export.imp_libs` | libraries to import |
 
 ### Bin Module Variables
 
