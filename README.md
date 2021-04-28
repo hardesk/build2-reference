@@ -9,6 +9,13 @@ buildfile contains directives, target declarations and variable assignmens. newl
 ### ./build/bootstrap.build
 A file read first. Names the project and must contain using directives to load modules.
 
+|variable|description|
+|:---:|---|
+|project|name of the project|
+|subprojects|local paths to subprojects. Listed dirs will be searched for buildfiles|
+|amalgamation| ??? |
+
+
 ### ./build/root.build
 In addition to what bootstrap contains, holds shared properties for targets in the project. Here `src_root` is defined while `src_base` is not (because no project is loaded yet).
 
@@ -16,6 +23,49 @@ When running buildfile from a subfolder, module import paths are based off build
 ```
 config.import.fmt=$src_root/libs/fmt # will make fmt%lib{fmt} available to import
 ```
+
+## Functions
+
+For path and most other functions, the argument can be `path`, `dir_path` or lists thereof. When the arg is `dir_path`, directory separator is stuck/appended at the end of the resulting value. 
+
+| function | description |
+| :---: | --- |
+|`$type(arg)`| return type of `arg` |
+|`$null(arg)`|check `arg` for null (return `true`)|
+|`$empty(a)`||
+|`$identity(a)`||
+|`$getenv(s)`| get value of env variable `s`|
+|`$path_search(pattern [, directories])`| search for paths in `directories` using `pattern` |
+|`$icasecmp(a,b), $stirng.icasecmp(a,b)`|compare strings `a` and `b` case insensitive|
+|`$trim(a), $string.trim(a)`|trim whitespace around for `a`|
+|`$install.resolve(p) `| resolve relative path `p` to absolute path where `p` is supposed to be installed|
+|`$canonicalize(p), $path.canonicalize(p) `| make path adhere to OS path separators|
+|`$normalize(p), $path.normalize(p)`| collapse .. in path. `$normalize(a/../b)` -> b |
+|`$directory(p), $path.directory(p)`| return directory part of `path`. `$directory(a/b/c)` returns `a/b/` |
+|`$base(p), $path.base(p)`| base of filename, ie. name with extension dropped |
+|`$extension()`||
+|`$name()`||
+|`$leaf(p), $path.leaf(p)`| return the most leaf element of the path. everything except the most root element, `$leaf(a/b/c)` -> `c` (or `c/` if dir_path) |
+|`$path.match(s, re[, ?]), $match(s, re[, ?])`| match `s` against regexp `re` |
+|`$regex.match(s, re[, flags])`| |
+|`$regex.search(s, re[, flags])`| |
+|`$regex.replace(s, re, rep[, flags])`| replace `re` in `s` with `rep`. eg. `$regex.replace('a.cxx\nb.cpp\n', '(.*).cxx', '\1.cpp', return_lines)` |
+|`$regex.replace_lines(s, re, rep[, flags])`| replace `re` in `s` with `rep`. eg. `$regex.replace_lines('a.cxx\nb.cpp\n', '(.*).cxx', '\1.cpp', return_lines)` |
+|`$regex.apply(s, re, ?)`| |
+|`$regex.find_match(s, re)`| |
+|`$regex.find_search(s, re)`| search using `re` in `s` |
+|`$regex.merge(s, ...)`| |
+|`$regex.split(s, re, ?)`| | split `s` using regexp `re` |
+|`$process.run(p)`| launch process `p` (with optional arguments) |
+|`$process.run_regex(p, re [,repl])`| launch process `p` and parse output using regex `re`. Can also replace output by specifying `repl` |
+|`$name.name()`||
+|`$name.extension()`||
+|`$name.directory()`||
+|`$name.target_type()`||
+|`$name.project()`||
+
+Possible flags for regex functions:
+icase, format_first_only, format_no_copy, return_lines, return_subs, return_match.
 
 ## Targets
 
