@@ -1,13 +1,13 @@
 # build2 reference
 
-A half-assed attempt to make a build2 reference. Information is extracted from the manual novel. Read it first (at least basics).
+A half-assed attempt to make a [build2](https://build2.org) reference. Information is extracted from the manual novel and source/test code. Dive into the manual and read it first as this is condensed list of stuff that matters. And while not everything here may be correct if anything at all, I hope someone will find it useful.
 
-buildfile contains directives, target declarations and variable assignmens. newlines matter.
+`buildfile` contains directives, target declarations and variable assignments and function calls. *newlines matter*.
 
-## Files
+## Project (Startup) Files
 
 ### ./build/bootstrap.build
-A file read first. Names the project and must contain using directives to load modules.
+The file that is read first. Names the project and must contain using directives to load modules.
 
 |variable|description|
 |:---:|---|
@@ -15,38 +15,40 @@ A file read first. Names the project and must contain using directives to load m
 |subprojects|local paths to subprojects. Listed dirs will be searched for buildfiles|
 |amalgamation| ??? |
 
-
 ### ./build/root.build
 In addition to what bootstrap contains, holds shared properties for targets in the project. Here `src_root` is defined while `src_base` is not (because no project is loaded yet).
 
-When running buildfile from a subfolder, module import paths are based off buildfile. This means that import must be prefixed with `$src_root` if it's project relative e.g.
+When running buildfile from a subfolder, module import paths are based off of that buildfile. This means that import must be prefixed with `$src_root` if it's project relative e.g.
 ```
 config.import.fmt=$src_root/libs/fmt # will make fmt%lib{fmt} available to import
 ```
+## Pattern Matching
+
+General format for specifying a dependency is `subdir/rule{filename.ext}`. subdir is optional, extension normally is not specified (rule is configured for a specific ext with `extension` property). Rule is the type of the file, eg. `cxx`, `hxx`, `testscript`, etc. Filename part can contain wildcards that will match files in a directory. `*` matches any file, `**` matches recursively in subfolders and `***` matches recursively also include the starting directory (not sure what the latter does actually). Problems arise when a filename contains a dot, eg. tool.test.cpp as `cxx{tool.test}` will think that `.test` is a forced extension. In this case we have to tell that there's another extension by prepending a `...` to the filename like so: `cxx{tool.test...}`. Contrary, if a file does not have an extension, we end a name with a single dot, eg `utility` will be specified as `cxx{utility.}`. `-` before a name will exclude those items from an *already* gathered list; `+` may be prepended to optionally include a dependency, that is target will depend on it only iff the item exists (for first item in {}, the + is not treated as optional mark).
 
 ## Functions
 
-For path and most other functions, the argument can be `path`, `dir_path` or lists thereof. When the arg is `dir_path`, directory separator is stuck/appended at the end of the resulting value. 
+For path and most other functions, the argument can be `path`, `dir_path` or lists thereof. When the arg is `dir_path`, directory separator is stuck/appended at the end of the resulting value.
 
 | function | description |
 | :---: | --- |
 |`$type(arg)`| return type of `arg` |
-|`$null(arg)`|check `arg` for null (return `true`)|
+|`$null(arg)`|check `arg` for null (return `true/false`)|
 |`$empty(a)`||
 |`$identity(a)`||
 |`$getenv(s)`| get value of env variable `s`|
 |`$path_search(pattern [, directories])`| search for paths in `directories` using `pattern` |
-|`$icasecmp(a,b), $stirng.icasecmp(a,b)`|compare strings `a` and `b` case insensitive|
-|`$trim(a), $string.trim(a)`|trim whitespace around for `a`|
-|`$install.resolve(p) `| resolve relative path `p` to absolute path where `p` is supposed to be installed|
-|`$canonicalize(p), $path.canonicalize(p) `| make path adhere to OS path separators|
-|`$normalize(p), $path.normalize(p)`| collapse .. in path. `$normalize(a/../b)` -> b |
-|`$directory(p), $path.directory(p)`| return directory part of `path`. `$directory(a/b/c)` returns `a/b/` |
-|`$base(p), $path.base(p)`| base of filename, ie. name with extension dropped |
+|`$icasecmp(a,b)` `$string.icasecmp(a,b)`|compare strings `a` and `b` case insensitive|
+|`$trim(a)` `$string.trim(a)`|trim whitespace around for `a`|
+|`$install.resolve(p)`| resolve relative path `p` to absolute path where `p` is supposed to be installed|
+|`$canonicalize(p)` `$path.canonicalize(p) `| make path adhere to OS path separators|
+|`$normalize(p)` `$path.normalize(p)`| collapse .. in path. `$normalize(a/../b)` -> b |
+|`$directory(p)` `$path.directory(p)`| return directory part of `path`. `$directory(a/b/c)` returns `a/b/` |
+|`$base(p)` `$path.base(p)`| base of filename, ie. name with extension dropped |
 |`$extension()`||
 |`$name()`||
-|`$leaf(p), $path.leaf(p)`| return the most leaf element of the path. everything except the most root element, `$leaf(a/b/c)` -> `c` (or `c/` if dir_path) |
-|`$path.match(s, re[, ?]), $match(s, re[, ?])`| match `s` against regexp `re` |
+|`$leaf(p)` `$path.leaf(p)`| return the most leaf element of the path. everything except the most root element, `$leaf(a/b/c)` -> `c` (or `c/` if dir_path) |
+|`$path.match(s, re[, ?])` `$match(s, re[, ?])`| match `s` against regexp `re` |
 |`$regex.match(s, re[, flags])`| |
 |`$regex.search(s, re[, flags])`| |
 |`$regex.replace(s, re, rep[, flags])`| replace `re` in `s` with `rep`. eg. `$regex.replace('a.cxx\nb.cpp\n', '(.*).cxx', '\1.cpp', return_lines)` |
@@ -94,7 +96,7 @@ objs{string}: # as opposed to obja{string}
 ```
 
 
-Also, scope can be introduced which is equivalent to reading a buildfile from a folder named as scope. Here in ./buildfile we reference ./tool/iron.hpp/cpp.
+Also, scope can be introduced which is equivalent to reading a buildfile from a folder named as scope. Here in ./buildfile we reference ./tool/iron.{hpp|cpp}.
 
 ```
 tool/
@@ -105,7 +107,7 @@ tool/
 
 ## Directives
 
-These resemble functions in a programming language.
+These resemble functions, but can have side-effects.
 
 ### import, import?, import!
 Import target from a project. Syntax is `import <name> = [<project>%]<target>`. Target can may be in another project: `config.import.<project>=<path>` must be declared is such case. <project> is skipped if target is in "this" project. This is called project-local importation.
@@ -166,7 +168,7 @@ Export target something something..
 export $out_root/libhello/$import.target
 ```
 
-**build/export.build** file describes how to export a target out of a project. Or rather, how to import it, as the file is read and parsed by the importing pary when the target (project?) is used in *another project*. A few variables are defined while parsing it (`src_base` and `out_base` are undefined):
+**build/export.build** file describes how to export a target out of a project. Or rather, how to import it, as the file is read and parsed by the importing party when the target (project?) is used in *another project*. A few variables are defined while parsing it (`src_base` and `out_base` are undefined):
 
 | variable | description |
 | --- | --- |
@@ -271,7 +273,7 @@ config.import.libworld=$src_root/libs/libworld
 | `src_base` | path to the current *target/scope* |
 | `out_root` | path to the output root for the *project* |
 | `out_base` | path to the current output for the *target/scope* |
-| `version` | version, also available .major, .minor and .patch |
+| `version` | version, also available `.major`, `.minor` and `.patch` |
 
 cxx module
 
